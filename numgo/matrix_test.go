@@ -44,6 +44,15 @@ func TestSumMatrix(t *testing.T) {
 		}
 		assertMatrixEqual(t, got, want)
 	})
+
+	t.Run("panic error Sum", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("want panic, got nil")
+			}
+		}()
+		A.Sum(AError.Data)
+	})
 }
 
 func TestSubtractMatrix(t *testing.T) {
@@ -56,6 +65,15 @@ func TestSubtractMatrix(t *testing.T) {
 			},
 		}
 		assertMatrixEqual(t, got, want)
+	})
+
+	t.Run("panic error Subtract", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("want panic, got nil")
+			}
+		}()
+		A.Subtract(AError.Data)
 	})
 }
 
@@ -70,6 +88,15 @@ func TestMultiplyMatrix(t *testing.T) {
 		}
 		assertMatrixEqual(t, got, want)
 	})
+
+	t.Run("panic error Multiply", func(t *testing.T) {
+		defer func() {
+			if r := recover(); r == nil {
+				t.Errorf("want panic, got nil")
+			}
+		}()
+		A.Multiply(AError.Data)
+	})
 }
 
 func TestResultMatrix(t *testing.T) {
@@ -81,41 +108,12 @@ func TestResultMatrix(t *testing.T) {
 		}
 	})
 
-	t.Run("result nil error", func(t *testing.T) {
+	t.Run("result err error", func(t *testing.T) {
 		_, LenError := A.resultMatrix(AError.Data)
 		_, ColError := A.resultMatrix(BError.Data)
 
 		assertLenError(t, LenError)
 		assertColError(t, ColError)
-	})
-}
-
-func TestPanic(t *testing.T) {
-	t.Run("panic error Sum", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("want panic, got nil")
-			}
-		}()
-		A.Sum(AError.Data)
-	})
-
-	t.Run("panic error Subtract", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("want panic, got nil")
-			}
-		}()
-		A.Subtract(AError.Data)
-	})
-
-	t.Run("panic error Multiply", func(t *testing.T) {
-		defer func() {
-			if r := recover(); r == nil {
-				t.Errorf("want panic, got nil")
-			}
-		}()
-		A.Multiply(AError.Data)
 	})
 }
 
@@ -156,7 +154,20 @@ func assertMatrixNil(t *testing.T, got *Matrix) {
 }
 
 func ExampleMatrix() {
-	repead := A.Sum(B.Data)
+	a := Matrix{
+		Data: [][]float64{
+			{1, 2, 3, 4},
+			{5, 6, 7, 8},
+		},
+	}
+
+	b := Matrix{
+		Data: [][]float64{
+			{1, 2, 3, 4},
+			{5, 6, 7, 8},
+		},
+	}
+	repead := a.Sum(b.Data)
 	fmt.Println(repead)
 	// Output: &{[[2 4 6 8] [10 12 14 16]] 2 4}
 }
