@@ -1,21 +1,21 @@
-package numgo
+package matrix
 
 import (
 	"errors"
 	"log"
 )
 
-type matrixtype interface {
+type Matrixtype interface {
 	int64 | float64
 }
 
-type Matrix[T matrixtype] struct {
+type Matrix[T Matrixtype] struct {
 	Data    [][]T
 	capRows int
 	capCols int
 }
 
-func NewMatrix[T matrixtype](data [][]T) Matrix[T] {
+func New[T Matrixtype](data [][]T) Matrix[T] {
 	if len(data) == 0 {
 		return Matrix[T]{
 			Data:    [][]T{},
@@ -57,7 +57,7 @@ func (m Matrix[T]) resultMatrix(B Matrix[T]) ([][]T, error) {
 // A + B
 //
 // A.Sum(B)
-func (m Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
+func (m *Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
 	Sum, err := m.resultMatrix(B)
 	if err != nil {
 		log.Panic(err)
@@ -124,7 +124,7 @@ func (m Matrix[T]) Determinant() T {
 	}
 	var det T
 	for i := 0; i < size; i++ {
-		subMatrix := NewMatrix(make([][]T, size-1))
+		subMatrix := New(make([][]T, size-1))
 		for j := range subMatrix.Data {
 			subMatrix.Data[j] = make([]T, size-1)
 		}
@@ -144,4 +144,38 @@ func (m Matrix[T]) Determinant() T {
 		det += T(sign) * matrix[0][i] * subMatrix.Determinant()
 	}
 	return T(det)
+}
+
+// Ramk matrix
+func (m Matrix[T]) Rank() T {
+	matrix := m.Data
+	rows := len(matrix)
+	if rows == 0 {
+		return 0
+	}
+	cols := len(matrix[0])
+	rank := 0
+	for i := 0; i < cols && rank < rows; i++ {
+		pivot := -1
+		for j := rank; j < rows; j++ {
+			if matrix[j][i] != 0 {
+				pivot = j
+				break
+			}
+		}
+		if pivot == -1 {
+			continue
+		}
+		if pivot != rank {
+			matrix[rank], matrix[pivot] = matrix[pivot], matrix[rank]
+		}
+		for j := rank + 1; j < rows; j++ {
+			coeff := matrix[j][i] / matrix[rank][i]
+			for k := i; k < cols; k++ {
+				matrix[j][k] -= coeff * matrix[rank][k]
+			}
+		}
+		rank++
+	}
+	return T(rank)
 }
