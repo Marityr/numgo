@@ -6,43 +6,33 @@ import (
 )
 
 var (
-	A = Matrix{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-			{5, 6, 7, 8},
-		},
-	}
+	A = NewMatrix([][]float64{
+		{1, 2, 3, 4},
+		{5, 6, 7, 8},
+	})
 
-	B = Matrix{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-			{5, 6, 7, 8},
-		},
-	}
+	B = NewMatrix([][]float64{
+		{1, 2, 3, 4},
+		{5, 6, 7, 8},
+	})
 
-	AError = Matrix{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-		},
-	}
-	BError = Matrix{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-			{5, 6, 7},
-		},
-	}
+	AError = NewMatrix([][]float64{
+		{1, 2, 3, 4},
+	})
+	BError = NewMatrix([][]float64{
+		{1, 2, 3, 4},
+		{5, 6, 7},
+	})
 )
 
 func TestSumMatrix(t *testing.T) {
 	t.Run("sum two matrices", func(t *testing.T) {
-		got := A.Sum(B.Data)
-		want := Matrix{
-			Data: [][]float64{
-				{2, 4, 6, 8},
-				{10, 12, 14, 16},
-			},
-		}
-		assertMatrixEqual(t, got, want)
+		got := A.Sum(B)
+		want := NewMatrix([][]float64{
+			{2, 4, 6, 8},
+			{10, 12, 14, 16},
+		})
+		assertMatrixEqual(t, *got, want)
 	})
 
 	t.Run("panic error Sum", func(t *testing.T) {
@@ -51,20 +41,18 @@ func TestSumMatrix(t *testing.T) {
 				t.Errorf("want panic, got nil")
 			}
 		}()
-		A.Sum(AError.Data)
+		A.Sum(AError)
 	})
 }
 
 func TestSubtractMatrix(t *testing.T) {
 	t.Run("subtract two matrices", func(t *testing.T) {
-		got := A.Subtract(B.Data)
-		want := Matrix{
-			Data: [][]float64{
-				{0, 0, 0, 0},
-				{0, 0, 0, 0},
-			},
-		}
-		assertMatrixEqual(t, got, want)
+		got := A.Subtract(B)
+		want := NewMatrix([][]float64{
+			{0, 0, 0, 0},
+			{0, 0, 0, 0},
+		})
+		assertMatrixEqual(t, *got, want)
 	})
 
 	t.Run("panic error Subtract", func(t *testing.T) {
@@ -73,20 +61,18 @@ func TestSubtractMatrix(t *testing.T) {
 				t.Errorf("want panic, got nil")
 			}
 		}()
-		A.Subtract(AError.Data)
+		A.Subtract(AError)
 	})
 }
 
 func TestMultiplyMatrix(t *testing.T) {
 	t.Run("multiply two matrices", func(t *testing.T) {
-		got := A.Multiply(B.Data)
-		want := Matrix{
-			Data: [][]float64{
-				{1, 4, 9, 16},
-				{25, 36, 49, 64},
-			},
-		}
-		assertMatrixEqual(t, got, want)
+		got := A.Multiply(B)
+		want := NewMatrix([][]float64{
+			{1, 4, 9, 16},
+			{25, 36, 49, 64},
+		})
+		assertMatrixEqual(t, *got, want)
 	})
 
 	t.Run("panic error Multiply", func(t *testing.T) {
@@ -95,13 +81,13 @@ func TestMultiplyMatrix(t *testing.T) {
 				t.Errorf("want panic, got nil")
 			}
 		}()
-		A.Multiply(AError.Data)
+		A.Multiply(AError)
 	})
 }
 
 func TestResultMatrix(t *testing.T) {
 	t.Run("result nil error", func(t *testing.T) {
-		_, want := A.resultMatrix(B.Data)
+		_, want := A.resultMatrix(B)
 
 		if want != nil {
 			t.Errorf("want nil, got %v", want)
@@ -109,11 +95,60 @@ func TestResultMatrix(t *testing.T) {
 	})
 
 	t.Run("result err error", func(t *testing.T) {
-		_, LenError := A.resultMatrix(AError.Data)
-		_, ColError := A.resultMatrix(BError.Data)
+		_, LenError := A.resultMatrix(AError)
+		_, ColError := A.resultMatrix(BError)
 
 		assertLenError(t, LenError)
 		assertColError(t, ColError)
+	})
+}
+
+func TestNewMatrix(t *testing.T) {
+	t.Run("new matrix", func(t *testing.T) {
+		got := NewMatrix([][]float64{
+			{1, 2, 3, 4},
+			{5, 6, 7, 8},
+		})
+		want := NewMatrix([][]float64{
+			{1, 2, 3, 4},
+			{5, 6, 7, 8},
+		})
+		assertMatrixEqual(t, got, want)
+	})
+}
+
+func TestDeterminant(t *testing.T) {
+	t.Run("determinant 3x3", func(t *testing.T) {
+		got := NewMatrix([][]int64{
+			{3, 3, 3},
+			{3, 3, 3},
+			{3, 3, 3},
+		}).Determinant()
+
+		want := int64(0)
+		if got != want {
+			t.Errorf("want %v, got %v", want, got)
+		}
+	})
+
+	t.Run("determinant 3x1", func(t *testing.T) {
+		got := NewMatrix([][]int64{
+			{3, 3, 3},
+		}).Determinant()
+
+		want := int64(3)
+		if got != want {
+			t.Errorf("want %v, got %v", want, got)
+		}
+	})
+
+	t.Run("determinant 0", func(t *testing.T) {
+		got := NewMatrix([][]float64{}).Determinant()
+		want := float64(0)
+
+		if got != want {
+			t.Errorf("want %v, got %v", want, got)
+		}
 	})
 }
 
@@ -133,7 +168,7 @@ func assertColError(t *testing.T, err error) {
 	}
 }
 
-func assertMatrixEqual(t *testing.T, got *Matrix, want Matrix) {
+func assertMatrixEqual[T matrixtype](t *testing.T, got Matrix[T], want Matrix[T]) {
 	t.Helper()
 
 	for i := 0; i < got.capRows; i++ {
@@ -145,7 +180,7 @@ func assertMatrixEqual(t *testing.T, got *Matrix, want Matrix) {
 	}
 }
 
-func assertMatrixNil(t *testing.T, got *Matrix) {
+func assertMatrixNil(t *testing.T, got *Matrix[float64]) {
 	t.Helper()
 
 	if got != nil {
@@ -154,20 +189,20 @@ func assertMatrixNil(t *testing.T, got *Matrix) {
 }
 
 func ExampleMatrix() {
-	a := Matrix{
+	a := Matrix[float64]{
 		Data: [][]float64{
 			{1, 2, 3, 4},
 			{5, 6, 7, 8},
 		},
 	}
 
-	b := Matrix{
+	b := Matrix[float64]{
 		Data: [][]float64{
 			{1, 2, 3, 4},
 			{5, 6, 7, 8},
 		},
 	}
-	repead := a.Sum(b.Data)
+	repead := a.Sum(b)
 	fmt.Println(repead)
 	// Output: &{[[2 4 6 8] [10 12 14 16]] 2 4}
 }
