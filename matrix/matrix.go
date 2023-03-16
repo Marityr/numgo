@@ -15,6 +15,7 @@ type Matrix[T Matrixtype] struct {
 	capCols int
 }
 
+// New create a new matrix
 func New[T Matrixtype](data [][]T) Matrix[T] {
 	if len(data) == 0 {
 		return Matrix[T]{
@@ -28,6 +29,15 @@ func New[T Matrixtype](data [][]T) Matrix[T] {
 		capRows: len(data),
 		capCols: len(data[0]),
 	}
+}
+
+func Identity[T Matrixtype](n int) Matrix[T] {
+	m := make([][]T, n)
+	for i := range m {
+		m[i] = make([]T, n)
+		m[i][i] = 1
+	}
+	return New(m)
 }
 
 func (m Matrix[T]) resultMatrix(B Matrix[T]) ([][]T, error) {
@@ -57,7 +67,7 @@ func (m Matrix[T]) resultMatrix(B Matrix[T]) ([][]T, error) {
 // A + B
 //
 // A.Sum(B)
-func (m *Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
+func (m Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
 	Sum, err := m.resultMatrix(B)
 	if err != nil {
 		log.Panic(err)
@@ -111,6 +121,37 @@ func (m Matrix[T]) Multiply(B Matrix[T]) *Matrix[T] {
 	return &Matrix[T]{Multiply, m.capRows, m.capCols}
 }
 
+// Multiply  matrix * number
+func (m Matrix[T]) MultiplyNum(num T) Matrix[T] {
+	Subtract, err := m.resultMatrix(m)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	for i := 0; i < m.capRows; i++ {
+		for j := 0; j < m.capCols; j++ {
+			Subtract[i][j] = m.Data[i][j] * num
+		}
+	}
+
+	return New(Subtract)
+}
+
+// Multiply matrix power
+func (m Matrix[T]) MatrixPower(n int) Matrix[T] {
+	result, err := m.resultMatrix(m)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	data := New(result)
+
+	for i := 1; i < n; i++ {
+		data = *data.Multiply(data)
+	}
+	return data
+}
+
 // Determinant of a matrix
 func (m Matrix[T]) Determinant() T {
 	matrix := m.Data
@@ -146,7 +187,7 @@ func (m Matrix[T]) Determinant() T {
 	return T(det)
 }
 
-// Ramk matrix
+// Rank matrix
 func (m Matrix[T]) Rank() T {
 	matrix := m.Data
 	rows := len(matrix)
@@ -178,4 +219,72 @@ func (m Matrix[T]) Rank() T {
 		rank++
 	}
 	return T(rank)
+}
+
+func (m Matrix[T]) InverseMatrix() Matrix[T] {
+	n := len(m.Data)
+	E := make([][]T, n)
+	for i := range E {
+		E[i] = make([]T, n)
+		E[i][i] = 1
+	}
+	for k := 0; k < n; k++ {
+		Akk := m.Data[k][k]
+		for j := 0; j < n; j++ {
+			m.Data[k][j] /= Akk
+			E[k][j] /= Akk
+		}
+		for i := 0; i < n; i++ {
+			if i == k {
+				continue
+			}
+			Aik := m.Data[i][k]
+			for j := 0; j < n; j++ {
+				m.Data[i][j] -= Aik * m.Data[k][j]
+				E[i][j] -= Aik * E[k][j]
+			}
+		}
+	}
+	return New(E)
+}
+
+// TransposeMatrix
+func (m Matrix[T]) TransposeMatrix() Matrix[T] {
+	result, err := m.resultMatrix(m)
+	if err != nil {
+		log.Panic(err)
+	}
+	data := New(result)
+	transposed := make([][]int, data.capCols)
+	for i := range transposed {
+		transposed[i] = make([]int, data.capRows)
+		for j := range transposed[i] {
+			data.Data[i][j] = m.Data[j][i]
+		}
+	}
+	return data
+}
+
+// Minor of a matrix
+func (m Matrix[T]) Minor(k int) T {
+	// Создаем подматрицу из выбранных строк и столбцов
+	subMatrix := make([][]T, k)
+	for i := range subMatrix {
+		subMatrix[i] = make([]T, k)
+		for j := range subMatrix[i] {
+			subMatrix[i][j] = m.Data[i][j]
+		}
+	}
+	// Вычисляем определитель подматрицы
+	data := New(subMatrix)
+	return data.Determinant()
+}
+
+// Trace of a matrix
+func (m Matrix[T]) Trace() T {
+	var sum T
+	for i := 0; i < len(m.Data); i++ {
+		sum += m.Data[i][i]
+	}
+	return sum
 }

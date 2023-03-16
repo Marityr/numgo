@@ -206,19 +206,15 @@ func assertMatrixNil(t *testing.T, got *Matrix[float64]) {
 }
 
 func ExampleMatrix() {
-	a := Matrix[float64]{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-			{5, 6, 7, 8},
-		},
-	}
+	a := New([][]float64{
+		{1, 2, 3, 4},
+		{5, 6, 7, 8},
+	})
 
-	b := Matrix[float64]{
-		Data: [][]float64{
-			{1, 2, 3, 4},
-			{5, 6, 7, 8},
-		},
-	}
+	b := New([][]float64{
+		{1, 2, 3, 4},
+		{5, 6, 7, 8},
+	})
 	repead := a.Sum(b)
 	fmt.Println(repead)
 	// Output: &{[[2 4 6 8] [10 12 14 16]] 2 4}
