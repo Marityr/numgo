@@ -6,7 +6,7 @@ import (
 )
 
 type Matrixtype interface {
-	int64 | float64
+	int | float32
 }
 
 type Matrix[T Matrixtype] struct {
@@ -16,19 +16,26 @@ type Matrix[T Matrixtype] struct {
 }
 
 // New create a new matrix
-func New[T Matrixtype](data [][]T) Matrix[T] {
+func New[T Matrixtype](data [][]T) (*Matrix[T], error) {
 	if len(data) == 0 {
-		return Matrix[T]{
+		return &Matrix[T]{
 			Data:    [][]T{},
 			capRows: 0,
 			capCols: 0,
+		}, nil
+	}
+
+	for i := range data {
+		if len(data[i]) != len(data[0]) {
+			return nil, errors.New("matrix dimensions are not equal")
 		}
 	}
-	return Matrix[T]{
+
+	return &Matrix[T]{
 		Data:    data,
 		capRows: len(data),
 		capCols: len(data[0]),
-	}
+	}, nil
 }
 
 func Identity[T Matrixtype](n int) Matrix[T] {
@@ -37,10 +44,15 @@ func Identity[T Matrixtype](n int) Matrix[T] {
 		m[i] = make([]T, n)
 		m[i][i] = 1
 	}
-	return New(m)
+
+	newMatrix, err := New(m)
+	if err != nil {
+		log.Println(err)
+	}
+	return *newMatrix
 }
 
-func (m Matrix[T]) resultMatrix(B Matrix[T]) ([][]T, error) {
+func (m Matrix[T]) compareTo(B Matrix[T]) ([][]T, error) {
 	if len(m.Data) != len(B.Data) {
 		return nil, errors.New("matrix dimensions are not equal")
 	}
@@ -68,7 +80,7 @@ func (m Matrix[T]) resultMatrix(B Matrix[T]) ([][]T, error) {
 //
 // A.Sum(B)
 func (m Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
-	Sum, err := m.resultMatrix(B)
+	Sum, err := m.compareTo(B)
 	if err != nil {
 		log.Panic(err)
 		return nil
@@ -87,7 +99,7 @@ func (m Matrix[T]) Sum(B Matrix[T]) *Matrix[T] {
 // A - B
 // A.Subtract(B)
 func (m Matrix[T]) Subtract(B Matrix[T]) *Matrix[T] {
-	Subtract, err := m.resultMatrix(B)
+	Subtract, err := m.compareTo(B)
 	if err != nil {
 		log.Panic(err)
 		return nil
@@ -106,7 +118,7 @@ func (m Matrix[T]) Subtract(B Matrix[T]) *Matrix[T] {
 // A * B
 // A.Multiply(B)
 func (m Matrix[T]) Multiply(B Matrix[T]) *Matrix[T] {
-	Multiply, err := m.resultMatrix(B)
+	Multiply, err := m.compareTo(B)
 	if err != nil {
 		log.Panic(err)
 		return nil
@@ -122,8 +134,8 @@ func (m Matrix[T]) Multiply(B Matrix[T]) *Matrix[T] {
 }
 
 // Multiply  matrix * number
-func (m Matrix[T]) MultiplyNum(num T) Matrix[T] {
-	Subtract, err := m.resultMatrix(m)
+func (m Matrix[T]) MultiplyNum(num T) *Matrix[T] {
+	Subtract, err := m.compareTo(m)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -134,21 +146,29 @@ func (m Matrix[T]) MultiplyNum(num T) Matrix[T] {
 		}
 	}
 
-	return New(Subtract)
+	newMatrix, err := New(Subtract)
+	if err != nil {
+		log.Println(err)
+	}
+	return newMatrix
 }
 
 // Multiply matrix power
-func (m Matrix[T]) MatrixPower(n int) Matrix[T] {
-	result, err := m.resultMatrix(m)
+func (m Matrix[T]) MatrixPower(n int) *Matrix[T] {
+	result, err := m.compareTo(m)
 	if err != nil {
 		log.Panic(err)
 	}
 
-	data := New(result)
+	data, err := New(result)
+	if err != nil {
+		log.Println(err)
+	}
 
 	for i := 1; i < n; i++ {
-		data = *data.Multiply(data)
+		data = data.Multiply(*data)
 	}
+
 	return data
 }
 
@@ -165,7 +185,10 @@ func (m Matrix[T]) Determinant() T {
 	}
 	var det T
 	for i := 0; i < size; i++ {
-		subMatrix := New(make([][]T, size-1))
+		subMatrix, err := New(make([][]T, size-1))
+		if err != nil {
+			log.Println(err)
+		}
 		for j := range subMatrix.Data {
 			subMatrix.Data[j] = make([]T, size-1)
 		}
@@ -245,16 +268,23 @@ func (m Matrix[T]) InverseMatrix() Matrix[T] {
 			}
 		}
 	}
-	return New(E)
+	newMatrix, err := New(E)
+	if err != nil {
+		log.Println(err)
+	}
+	return *newMatrix
 }
 
 // TransposeMatrix
-func (m Matrix[T]) TransposeMatrix() Matrix[T] {
-	result, err := m.resultMatrix(m)
+func (m Matrix[T]) TransposeMatrix() *Matrix[T] {
+	result, err := m.compareTo(m)
 	if err != nil {
 		log.Panic(err)
 	}
-	data := New(result)
+	data, err := New(result)
+	if err != nil {
+		log.Println(err)
+	}
 	transposed := make([][]int, data.capCols)
 	for i := range transposed {
 		transposed[i] = make([]int, data.capRows)
@@ -276,8 +306,11 @@ func (m Matrix[T]) Minor(k int) T {
 		}
 	}
 	// Вычисляем определитель подматрицы
-	data := New(subMatrix)
-	return data.Determinant()
+	newMatrix, err := New(subMatrix)
+	if err != nil {
+		log.Println(err)
+	}
+	return newMatrix.Determinant()
 }
 
 // Trace of a matrix
